@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus, Trash2, ChevronLeft, ChevronRight, Settings, Download,
   Utensils, Activity, Ruler, BarChart3, CalendarDays, Check,
-  Loader2, AlertTriangle, NotebookPen, LogOut, Lock
+  Loader2, AlertTriangle, NotebookPen, LogOut, Lock, ExternalLink,
+  PlayCircle, BookOpen
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid,
@@ -196,6 +197,33 @@ function DayRing({ rating }) {
   );
 }
 
+function ResourceLinks({ compact = false }) {
+  return (
+    <div className={`gdt-resources ${compact ? "gdt-resources--compact" : ""}`}>
+      <a
+        className="gdt-resource-link"
+        href="https://www.youtube.com/watch?v=t4LYqIxWHQQ"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <PlayCircle size={18} aria-hidden="true" />
+        <span><strong>Video educativo</strong><small>Cómo medir correctamente la cintura · YouTube</small></span>
+        <ExternalLink size={15} aria-hidden="true" />
+      </a>
+      <a
+        className="gdt-resource-link"
+        href="https://www.niddk.nih.gov/health-information/informacion-de-la-salud/enfermedades-digestivas/aparato-digestivo-funcionamiento"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <BookOpen size={18} aria-hidden="true" />
+        <span><strong>Guía oficial</strong><small>El aparato digestivo y su funcionamiento · NIDDK</small></span>
+        <ExternalLink size={15} aria-hidden="true" />
+      </a>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------
    Auth gate
 --------------------------------------------------------- */
@@ -233,6 +261,10 @@ function LoginScreen() {
             {busy ? <Loader2 size={16} className="gdt-spin" /> : "Iniciar sesión"}
           </button>
         </form>
+        <div className="gdt-login-resource-block">
+          <span>RECURSOS DIGITALES</span>
+          <ResourceLinks compact />
+        </div>
       </div>
     </div>
   );
@@ -962,6 +994,13 @@ function AjustesTab({ data, onClear }) {
         </button>
       </SectionCard>
 
+      <SectionCard title="Recursos para tu salud digestiva" icon={<BookOpen size={16} className="gdt-icon-muted" />}>
+        <p className="gdt-settings-text">
+          Consulta estos contenidos educativos alojados en otras plataformas. Se abren en una pestaña nueva.
+        </p>
+        <ResourceLinks />
+      </SectionCard>
+
       <SectionCard>
         <p className="gdt-disclaimer">
           Esta app es una herramienta personal de registro y no reemplaza una consulta médica.
@@ -1014,6 +1053,8 @@ const CSS = `
 .gdt-login-card p { font-size: 12.5px; color: var(--muted); margin: 0 0 16px; }
 .gdt-login-card input { width: 100%; }
 .gdt-login-error { color: #A5473F; font-size: 12px; margin: 0; }
+.gdt-login-resource-block { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; text-align: left; }
+.gdt-login-resource-block > span { display: block; color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: .12em; margin-bottom: 8px; }
 
 .gdt-header {
   padding: 22px 18px 16px; display: flex; justify-content: space-between; align-items: flex-start;
@@ -1125,6 +1166,21 @@ const CSS = `
 .gdt-settings-text { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
 .gdt-settings-hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
 .gdt-disclaimer { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+.gdt-resources { display: grid; gap: 9px; }
+.gdt-resource-link {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
+  padding: 11px 12px; text-decoration: none; transition: border-color .15s ease, transform .15s ease;
+}
+.gdt-resource-link:hover { border-color: var(--sage); transform: translateY(-1px); }
+.gdt-resource-link > svg:first-child { color: var(--sage); }
+.gdt-resource-link > svg:last-child { color: var(--muted); }
+.gdt-resource-link span { min-width: 0; }
+.gdt-resource-link strong { display: block; font-family: 'Fraunces', serif; font-size: 13.5px; }
+.gdt-resource-link small { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.35; margin-top: 2px; }
+.gdt-resources--compact { gap: 7px; }
+.gdt-resources--compact .gdt-resource-link { padding: 9px; }
 
 .gdt-modal-backdrop { position: fixed; inset: 0; background: rgba(38,46,39,0.45); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
 .gdt-modal { background: var(--surface); border-radius: 14px; padding: 20px; max-width: 360px; text-align: center; }
