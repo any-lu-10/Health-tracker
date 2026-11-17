@@ -10,7 +10,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine
 } from "recharts";
 import {
-  onAuthStateChanged, signInWithEmailAndPassword, signOut
+  onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut
 } from "firebase/auth";
 import {
   collection, doc, setDoc, onSnapshot
@@ -246,6 +246,17 @@ function LoginScreen() {
     }
   }
 
+  async function enterAsGuest() {
+    setError(""); setBusy(true);
+    try {
+      await signInAnonymously(auth);
+    } catch (err) {
+      setError("No pudimos abrir el modo invitado. Inténtalo nuevamente.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="gdt-app gdt-login-screen">
       <style>{CSS}</style>
@@ -261,6 +272,11 @@ function LoginScreen() {
             {busy ? <Loader2 size={16} className="gdt-spin" /> : "Iniciar sesión"}
           </button>
         </form>
+        <div className="gdt-login-divider"><span>o</span></div>
+        <button type="button" className="gdt-btn gdt-btn--guest" onClick={enterAsGuest} disabled={busy}>
+          Entrar como invitado
+        </button>
+        <p className="gdt-guest-help">El modo invitado usa un espacio separado y no permite ver los datos personales de la propietaria.</p>
         <div className="gdt-login-resource-block">
           <span>RECURSOS DIGITALES</span>
           <ResourceLinks compact />
@@ -297,14 +313,14 @@ export default function App() {
 
   if (!user) return <LoginScreen />;
 
-  return <MainApp uid={user.uid} />;
+  return <MainApp uid={user.uid} isGuest={user.isAnonymous} />;
 }
 
 /* ---------------------------------------------------------
    Main App (signed in)
 --------------------------------------------------------- */
 
-function MainApp({ uid: userId }) {
+function MainApp({ uid: userId, isGuest }) {
   const [data, setData] = useState({ days: {} });
   const [dataLoading, setDataLoading] = useState(true);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
@@ -399,7 +415,10 @@ function MainApp({ uid: userId }) {
           <h1>Diario Digestivo</h1>
           <p>Registra, observa, entiende a tu intestino</p>
         </div>
-        <SaveIndicator state={dataLoading ? "loading" : saveState} />
+        <div className="gdt-header-status">
+          {isGuest && <span className="gdt-guest-badge">Modo invitado</span>}
+          <SaveIndicator state={dataLoading ? "loading" : saveState} />
+        </div>
       </header>
 
       <main className="gdt-main">
@@ -431,7 +450,7 @@ function MainApp({ uid: userId }) {
         {tab === "graficas" && <GraficasTab days={data.days} />}
 
         {tab === "ajustes" && (
-          <AjustesTab data={data} onClear={() => setConfirmClear(true)} />
+          <AjustesTab data={data} onClear={() => setConfirmClear(true)} isGuest={isGuest} />
         )}
       </main>
 
@@ -957,7 +976,7 @@ function GraficasTab({ days }) {
    Ajustes Tab
 --------------------------------------------------------- */
 
-function AjustesTab({ data, onClear }) {
+function AjustesTab({ data, onClear, isGuest }) {
   function downloadBackup() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -973,8 +992,9 @@ function AjustesTab({ data, onClear }) {
     <div className="gdt-stack">
       <SectionCard title="Tus datos" icon={<Settings size={16} className="gdt-icon-muted" />}>
         <p className="gdt-settings-text">
-          Tienes {dayCount} {dayCount === 1 ? "día" : "días"} registrados. Todo se guarda en tu propia
-          base de datos, protegida con tu usuario y contraseña — nadie más puede entrar ni verla.
+          Tienes {dayCount} {dayCount === 1 ? "día" : "días"} registrados. {isGuest
+            ? "Estás usando un espacio temporal separado de los datos personales de la propietaria."
+            : "Todo se guarda en tu propia base de datos, protegida con tu usuario y contraseña — nadie más puede entrar ni verla."}
         </p>
         <button className="gdt-btn gdt-btn--secondary" onClick={downloadBackup}>
           <Download size={16} /> Descargar respaldo (JSON)
@@ -1053,6 +1073,11 @@ const CSS = `
 .gdt-login-card p { font-size: 12.5px; color: var(--muted); margin: 0 0 16px; }
 .gdt-login-card input { width: 100%; }
 .gdt-login-error { color: #A5473F; font-size: 12px; margin: 0; }
+.gdt-login-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; margin: 14px 0; }
+.gdt-login-divider::before, .gdt-login-divider::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+.gdt-btn--guest { width: 100%; background: #EEF3EC; border-color: #B9C9B8; color: var(--ink); }
+.gdt-btn--guest:hover { background: #E2ECE0; }
+.gdt-login-card .gdt-guest-help { font-size: 10.5px; line-height: 1.45; margin: 9px 3px 0; }
 .gdt-login-resource-block { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; text-align: left; }
 .gdt-login-resource-block > span { display: block; color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: .12em; margin-bottom: 8px; }
 
@@ -1062,6 +1087,8 @@ const CSS = `
 }
 .gdt-header h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; margin: 0; }
 .gdt-header p { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+.gdt-header-status { display: flex; align-items: flex-end; flex-direction: column; gap: 5px; }
+.gdt-guest-badge { background: #EEF3EC; border: 1px solid #B9C9B8; color: #425D46; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 600; white-space: nowrap; }
 
 .gdt-save { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; white-space: nowrap; margin-top: 3px; }
 .gdt-save--error { color: #A5473F; }
